@@ -5,6 +5,7 @@ const compression = require('compression');
 const morgan = require('morgan');
 const cookieParser = require('cookie-parser');
 const rateLimit = require('express-rate-limit');
+const mongoSanitize = require('express-mongo-sanitize');
 const mongoose = require('mongoose');
 require('dotenv').config();
 
@@ -47,6 +48,9 @@ connectDB();
 app.use(helmet());
 app.use(compression());
 app.use(cookieParser());
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+app.use(mongoSanitize());
 app.use(morgan(process.env.NODE_ENV === 'production' ? 'combined' : 'dev'));
 
 // CORS Setup
@@ -72,9 +76,6 @@ app.use(
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
   })
 );
-
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // Rate Limiting
 const generalLimiter = rateLimit({

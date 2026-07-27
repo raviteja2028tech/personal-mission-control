@@ -3,14 +3,22 @@ const crypto = require('crypto');
 const User = require('../models/User');
 const seedDefaults = require('../utils/seedDefaults');
 
-// Generate JWT
+// Generate Access Token
 const generateToken = (id) => {
-  return jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: process.env.JWT_EXPIRE || '7d' });
+  const secret = process.env.JWT_SECRET || 'pmc_super_secret_key_change_in_production_2026';
+  return jwt.sign({ id }, secret, { expiresIn: process.env.JWT_EXPIRE || '7d' });
+};
+
+// Generate Refresh Token
+const generateRefreshToken = (id) => {
+  const refreshSecret = process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET || 'pmc_super_secret_refresh_key_2026';
+  return jwt.sign({ id }, refreshSecret, { expiresIn: '30d' });
 };
 
 // Helper to send token response and set HTTP-only cookie
 const sendTokenResponse = (user, statusCode, res) => {
   const token = generateToken(user._id);
+  const refreshToken = generateRefreshToken(user._id);
 
   const cookieOptions = {
     expires: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
@@ -19,12 +27,21 @@ const sendTokenResponse = (user, statusCode, res) => {
     sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax'
   };
 
+  const refreshCookieOptions = {
+    expires: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax'
+  };
+
   res
     .status(statusCode)
     .cookie('pmc_token', token, cookieOptions)
+    .cookie('pmc_refresh_token', refreshToken, refreshCookieOptions)
     .json({
       success: true,
       token,
+      refreshToken,
       user: {
         id: user._id,
         name: user.name,
@@ -34,6 +51,32 @@ const sendTokenResponse = (user, statusCode, res) => {
         isVerified: user.isVerified
       }
     });
+};
+
+// @route   POST /api/auth/refresh
+exports.refreshToken = async (req, res, next) => {
+  try {
+    let refreshToken = req.cookies ? req.cookies.pmc_refresh_token : null;
+    if (!refreshToken && req.body.refreshToken) {
+      refreshToken = req.body.refreshToken;
+    }
+
+    if (!refreshToken) {
+      return res.status(401).json({ success: false, message: 'Refresh token missing' });
+    }
+
+    const refreshSecret = process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET || 'pmc_super_secret_refresh_key_2026';
+    const decoded = jwt.verify(refreshToken, refreshSecret);
+    const user = await User.findById(decoded.id);
+
+    if (!user) {
+      return res.status(401).json({ success: false, message: 'Invalid refresh token user' });
+    }
+
+    sendTokenResponse(user, 200, res);
+  } catch (error) {
+    return res.status(401).json({ success: false, message: 'Invalid or expired refresh token' });
+  }
 };
 
 // @route   POST /api/auth/signup

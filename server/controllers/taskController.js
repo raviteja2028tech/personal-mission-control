@@ -275,3 +275,16 @@ exports.getAllTasks = async (req, res, next) => {
     next(error);
   }
 };
+
+// @route   GET /api/tasks/:id (get single task)
+exports.getTaskById = async (req, res, next) => {
+  try {
+    const task = await Task.findOne({ _id: req.params.id, userId: req.userId }).populate('projectId', 'name color');
+    if (!task) {
+      return res.status(404).json({ success: false, message: 'Task not found' });
+    }
+    res.json({ success: true, task });
+  } catch (error) {
+    next(error);
+  }
+};

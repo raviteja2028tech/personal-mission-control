@@ -18,6 +18,26 @@ exports.createLearningItem = async (req, res, next) => {
   } catch (err) { next(err); }
 };
 
+exports.updateLearningItem = async (req, res, next) => {
+  try {
+    const item = await Learning.findOneAndUpdate(
+      { _id: req.params.id, userId: req.userId },
+      req.body,
+      { new: true, runValidators: true }
+    );
+    if (!item) return res.status(404).json({ success: false, message: 'Learning item not found' });
+    res.json({ success: true, data: item });
+  } catch (err) { next(err); }
+};
+
+exports.deleteLearningItem = async (req, res, next) => {
+  try {
+    const item = await Learning.findOneAndDelete({ _id: req.params.id, userId: req.userId });
+    if (!item) return res.status(404).json({ success: false, message: 'Learning item not found' });
+    res.json({ success: true, message: 'Learning item deleted' });
+  } catch (err) { next(err); }
+};
+
 // --- Interview Tracker Endpoints ---
 exports.getInterviews = async (req, res, next) => {
   try {
@@ -30,6 +50,26 @@ exports.createInterview = async (req, res, next) => {
   try {
     const interview = await Interview.create({ ...req.body, userId: req.userId });
     res.status(201).json({ success: true, data: interview });
+  } catch (err) { next(err); }
+};
+
+exports.updateInterview = async (req, res, next) => {
+  try {
+    const interview = await Interview.findOneAndUpdate(
+      { _id: req.params.id, userId: req.userId },
+      req.body,
+      { new: true, runValidators: true }
+    );
+    if (!interview) return res.status(404).json({ success: false, message: 'Interview not found' });
+    res.json({ success: true, data: interview });
+  } catch (err) { next(err); }
+};
+
+exports.deleteInterview = async (req, res, next) => {
+  try {
+    const interview = await Interview.findOneAndDelete({ _id: req.params.id, userId: req.userId });
+    if (!interview) return res.status(404).json({ success: false, message: 'Interview not found' });
+    res.json({ success: true, message: 'Interview deleted' });
   } catch (err) { next(err); }
 };
 

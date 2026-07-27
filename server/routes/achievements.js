@@ -7,3 +7,4 @@ router.get('/', auth, getAchievements);
 router.post('/unlock', auth, unlockAchievement);
 
 module.exports = router;
+
