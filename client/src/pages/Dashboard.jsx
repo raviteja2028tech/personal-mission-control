@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import API from '../api/axios';
 import toast from 'react-hot-toast';
 
 export default function Dashboard() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
 
   useEffect(() => {
     fetchDashboard();
@@ -23,192 +25,213 @@ export default function Dashboard() {
   const handleCompleteTask = async (taskId) => {
     try {
       await API.patch(`/tasks/${taskId}/complete`);
-      toast.success('Mission accomplished! 🎯');
+      toast.success('Mission completed! 🎯');
       fetchDashboard();
     } catch (err) {
       toast.error(err.response?.data?.message || 'Failed to complete task');
     }
   };
 
-  if (loading) return <div className="loading-spinner"><div className="spinner"></div></div>;
+  if (loading) return (
+    <div className="loading-page">
+      <div className="clean-spinner"></div>
+    </div>
+  );
 
   const d = data || {};
-  const loadClass = d.mentalLoad?.level || 'low';
-
-  // Progress ring SVG
-  const ringSize = 120;
-  const strokeWidth = 8;
-  const radius = (ringSize - strokeWidth) / 2;
-  const circumference = 2 * Math.PI * radius;
+  const loadLevel = d.mentalLoad?.level || 'low';
   const percentage = d.todayPercentage || 0;
-  const offset = circumference - (percentage / 100) * circumference;
+
+  const todayDate = new Date().toLocaleDateString('en-US', {
+    weekday: 'long',
+    month: 'long',
+    day: 'numeric'
+  }).toUpperCase();
 
   return (
-    <div className="fade-in">
-      {/* Greeting */}
-      <div className="greeting">
-        <h1 className="greeting-text">{d.greeting}, {d.userName} 👋</h1>
-        <p className="greeting-sub">
-          {d.streak > 0 && <span>🔥 {d.streak} day streak · </span>}
-          {d.todayTotal > 0
-            ? `${d.todayCompleted}/${d.todayTotal} tasks done today`
-            : 'No tasks scheduled today — plan your missions!'}
-        </p>
+    <div className="clean-dashboard fade-in">
+      {/* Handsome Header */}
+      <div className="clean-header">
+        <div className="header-meta">
+          <span className="date-chip">{todayDate}</span>
+          <h1 className="clean-title">{d.greeting}, <span className="name-highlight">{d.userName}</span></h1>
+          <p className="clean-subtitle">
+            {d.todayTotal > 0
+              ? `You've completed ${d.todayCompleted} of ${d.todayTotal} top focus missions today.`
+              : 'No missions scheduled for today. Create tasks or schedule your day in the planner.'}
+          </p>
+        </div>
+
+        <div className="header-actions">
+          <button className="btn-clean-primary" onClick={() => navigate('/focus')}>
+            🎯 Focus Mode
+          </button>
+          <button className="btn-clean-secondary" onClick={() => navigate('/planner')}>
+            📅 Time Planner
+          </button>
+        </div>
       </div>
 
-      {/* Main Dashboard Grid */}
-      <div className="dashboard-grid">
+      {/* Clean Metric Cards Row */}
+      <div className="clean-metrics-row">
+        <div className="clean-metric-card">
+          <div className="metric-header">
+            <span className="metric-icon-wrap cyan">🎯</span>
+            <span className="metric-sub">TODAY'S MISSIONS</span>
+          </div>
+          <div className="metric-main">
+            <span className="metric-big-num">{d.todayCompleted || 0}</span>
+            <span className="metric-divider">/</span>
+            <span className="metric-small-num">{d.todayTotal || 0}</span>
+          </div>
+          <div className="metric-progress-track">
+            <div className="metric-progress-fill" style={{ width: `${percentage}%` }}></div>
+          </div>
+        </div>
+
+        <div className="clean-metric-card">
+          <div className="metric-header">
+            <span className="metric-icon-wrap purple">🧠</span>
+            <span className="metric-sub">COGNITIVE CAPACITY</span>
+          </div>
+          <div className="metric-main">
+            <span className={`capacity-pill ${loadLevel}`}>
+              {loadLevel === 'high' ? '⚠️ High Load' : loadLevel === 'medium' ? '⚡ Moderate' : '🟢 Optimal'}
+            </span>
+          </div>
+          <p className="metric-caption">{d.mentalLoad?.suggestion || 'Mental capacity is optimal for deep work.'}</p>
+        </div>
+
+        <div className="clean-metric-card">
+          <div className="metric-header">
+            <span className="metric-icon-wrap amber">🔥</span>
+            <span className="metric-sub">STREAK RECORD</span>
+          </div>
+          <div className="metric-main">
+            <span className="metric-big-num amber-text">{d.streak || 0}</span>
+            <span className="metric-unit">DAYS</span>
+          </div>
+          <p className="metric-caption">Longest streak: {d.longestStreak || 0} days</p>
+        </div>
+      </div>
+
+      {/* Main Content Area */}
+      <div className="clean-dashboard-grid">
         {/* Left Column: Top 3 Missions */}
-        <div>
-          <div className="card">
-            <div className="card-header">
-              <h2 className="card-title">🎯 Today's Top 3 Missions</h2>
+        <div className="clean-main-column">
+          <div className="clean-panel">
+            <div className="panel-header">
+              <div>
+                <h2 className="panel-title">Top Focus Missions</h2>
+                <p className="panel-sub">Surfaced by priority & impact</p>
+              </div>
+              <button className="text-btn" onClick={() => navigate('/tasks')}>
+                View all tasks →
+              </button>
             </div>
-            <div className="dashboard-missions">
+
+            <div className="clean-missions-list">
               {d.topMissions && d.topMissions.length > 0 ? (
                 d.topMissions.map((mission, i) => (
-                  <div key={mission._id} className="mission-card" style={{ animationDelay: `${i * 100}ms` }}>
+                  <div key={mission._id} className="clean-mission-item">
                     <button
-                      className="mission-complete-btn"
-                      onClick={(e) => { e.stopPropagation(); handleCompleteTask(mission._id); }}
-                      title="Complete mission"
+                      className="clean-check-btn"
+                      onClick={() => handleCompleteTask(mission._id)}
+                      title="Mark as completed"
                     >
                       ✓
                     </button>
-                    <div className="mission-number">{i + 1}</div>
-                    <div className="mission-content">
-                      <div className="mission-title">{mission.title}</div>
-                      {mission.why && <div className="mission-why">"{mission.why}"</div>}
-                      <div className="mission-meta">
-                        <span className={`badge badge-${mission.priority}`}>{mission.priority}</span>
+                    
+                    <div className="clean-mission-content">
+                      <div className="mission-title-row">
+                        <span className="clean-mission-title">{mission.title}</span>
+                        <span className={`priority-tag ${mission.priority}`}>{mission.priority}</span>
+                      </div>
+                      
+                      {mission.why && (
+                        <p className="clean-mission-why">"{mission.why}"</p>
+                      )}
+
+                      <div className="clean-mission-meta">
                         {mission.projectId && (
-                          <span className="task-project-tag">
-                            <span className="task-project-dot" style={{ background: mission.projectId.color }}></span>
+                          <span className="project-chip">
+                            <span className="dot" style={{ background: mission.projectId.color || '#6366f1' }}></span>
                             {mission.projectId.name}
                           </span>
                         )}
-                        {mission.dueDate && (
-                          <span>📅 {new Date(mission.dueDate).toLocaleDateString()}</span>
-                        )}
                         {mission.estimatedTime && (
-                          <span>⏱ {mission.estimatedTime}m</span>
+                          <span className="meta-chip">⏱️ {mission.estimatedTime}m</span>
+                        )}
+                        {mission.dueDate && (
+                          <span className="meta-chip">📅 {new Date(mission.dueDate).toLocaleDateString()}</span>
                         )}
                       </div>
                     </div>
                   </div>
                 ))
               ) : (
-                <div className="empty-state">
-                  <div className="empty-state-icon">🎉</div>
-                  <h3>All clear!</h3>
-                  <p>No pending tasks. Add new tasks to get started.</p>
+                <div className="clean-empty-state">
+                  <span className="empty-icon">✨</span>
+                  <h3>All clear for today</h3>
+                  <p>You've completed all high priority focus items. Add new tasks to keep momentum going.</p>
+                  <button className="btn-clean-primary mt-3" onClick={() => navigate('/tasks')}>
+                    + Add New Task
+                  </button>
                 </div>
               )}
             </div>
           </div>
-
-          {/* Mental Load Meter */}
-          <div className="card" style={{ marginTop: 20 }}>
-            <div className="card-header">
-              <h2 className="card-title">🧠 Mental Load</h2>
-              <span className={`load-label ${loadClass}`}>
-                {d.mentalLoad?.level?.toUpperCase() || 'LOW'}
-              </span>
-            </div>
-            <div className="mental-load-meter">
-              <div className="load-bar">
-                <div className={`load-fill ${loadClass}`}></div>
-              </div>
-              <p className="load-suggestion">{d.mentalLoad?.suggestion || 'Looking good!'}</p>
-              <div className="task-meta" style={{ marginTop: 12 }}>
-                <span>📋 {d.mentalLoad?.stats?.pendingCount || 0} pending</span>
-                <span>🔴 {d.mentalLoad?.stats?.highPriorityCount || 0} high priority</span>
-                <span>⚠️ {d.mentalLoad?.stats?.overdueCount || 0} overdue</span>
-              </div>
-            </div>
-          </div>
         </div>
 
-        {/* Right Column: Stats */}
-        <div>
-          {/* Today's Progress Ring */}
-          <div className="card" style={{ textAlign: 'center', marginBottom: 20 }}>
-            <div className="card-header">
-              <h2 className="card-title">Today's Progress</h2>
-            </div>
-            <div className="progress-ring-container" style={{ margin: '10px auto' }}>
-              <svg width={ringSize} height={ringSize} style={{ transform: 'rotate(-90deg)' }}>
-                <circle
-                  cx={ringSize / 2}
-                  cy={ringSize / 2}
-                  r={radius}
-                  fill="none"
-                  stroke="var(--bg-tertiary)"
-                  strokeWidth={strokeWidth}
-                />
-                <circle
-                  cx={ringSize / 2}
-                  cy={ringSize / 2}
-                  r={radius}
-                  fill="none"
-                  stroke="url(#progressGradient)"
-                  strokeWidth={strokeWidth}
-                  strokeDasharray={circumference}
-                  strokeDashoffset={offset}
-                  strokeLinecap="round"
-                  style={{ transition: 'stroke-dashoffset 1s cubic-bezier(0.4, 0, 0.2, 1)' }}
-                />
-                <defs>
-                  <linearGradient id="progressGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                    <stop offset="0%" stopColor="var(--accent-primary)" />
-                    <stop offset="100%" stopColor="var(--accent-secondary)" />
-                  </linearGradient>
-                </defs>
-              </svg>
-              <span className="progress-ring-text">{percentage}%</span>
-            </div>
-            <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', marginTop: 8 }}>
-              {d.todayCompleted}/{d.todayTotal} tasks completed
-            </p>
-          </div>
+        {/* Right Column: Quick Work Overview */}
+        <div className="clean-side-column">
+          <div className="clean-panel">
+            <h2 className="panel-title mb-3">Today's Summary</h2>
+            
+            <div className="summary-list">
+              <div className="summary-row">
+                <span className="summary-label">📋 Pending Tasks</span>
+                <span className="summary-val">{d.mentalLoad?.stats?.pendingCount || 0}</span>
+              </div>
 
-          {/* Quick Stats */}
-          <div className="card" style={{ marginBottom: 20 }}>
-            <div className="card-header">
-              <h2 className="card-title">Quick Stats</h2>
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>⏱ Today's Work</span>
-                <span style={{ fontWeight: 700 }}>{d.todayEstimatedHours || 0}h</span>
+              <div className="summary-row">
+                <span className="summary-label">🔴 High Priority</span>
+                <span className="summary-val danger-text">{d.mentalLoad?.stats?.highPriorityCount || 0}</span>
               </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>📊 Overall</span>
-                <span style={{ fontWeight: 700 }}>{d.overallPercentage || 0}%</span>
+
+              <div className="summary-row">
+                <span className="summary-label">⚠️ Overdue Items</span>
+                <span className="summary-val warning-text">{d.mentalLoad?.stats?.overdueCount || 0}</span>
               </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>🔥 Streak</span>
-                <span style={{ fontWeight: 700, color: 'var(--warning)' }}>{d.streak || 0} days</span>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>🏆 Best Streak</span>
-                <span style={{ fontWeight: 700 }}>{d.longestStreak || 0} days</span>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>🧘 Deep Work</span>
-                <span style={{ fontWeight: 700 }}>{d.deepWorkHours || 0}h</span>
+
+              <div className="summary-row">
+                <span className="summary-label">🧘 Deep Work Logged</span>
+                <span className="summary-val">{d.deepWorkHours || 0}h</span>
               </div>
             </div>
           </div>
 
-          {/* Streak Card */}
-          {d.streak > 0 && (
-            <div className="streak-display">
-              <span className="streak-fire">🔥</span>
-              <span className="streak-count">{d.streak}</span>
-              <span className="streak-label">Day Streak</span>
+          <div className="clean-panel mt-4">
+            <h2 className="panel-title mb-3">Quick Navigation</h2>
+            <div className="quick-nav-grid">
+              <button className="nav-tile" onClick={() => navigate('/braindump')}>
+                <span className="tile-icon">💡</span>
+                <span className="tile-name">Brain Dump</span>
+              </button>
+              <button className="nav-tile" onClick={() => navigate('/review')}>
+                <span className="tile-icon">📝</span>
+                <span className="tile-name">Weekly Review</span>
+              </button>
+              <button className="nav-tile" onClick={() => navigate('/analytics')}>
+                <span className="tile-icon">📊</span>
+                <span className="tile-name">Analytics</span>
+              </button>
+              <button className="nav-tile" onClick={() => navigate('/achievements')}>
+                <span className="tile-icon">🏆</span>
+                <span className="tile-name">Badges</span>
+              </button>
             </div>
-          )}
+          </div>
         </div>
       </div>
     </div>

@@ -1,10 +1,17 @@
 import axios from 'axios';
 
+const rawUrl = import.meta.env.VITE_API_URL;
+const baseURL = (rawUrl && !rawUrl.includes('your-backend.vercel.app')) 
+  ? rawUrl 
+  : 'http://localhost:5000/api/v1';
+
+
 const API = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || '/api/v1',
+  baseURL,
   withCredentials: true,
   headers: { 'Content-Type': 'application/json' }
 });
+
 
 // Add JWT token to every request
 API.interceptors.request.use((config) => {

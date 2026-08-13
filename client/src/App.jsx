@@ -24,6 +24,7 @@ function ProtectedRoute({ children }) {
 }
 
 import CommandPalette from './components/common/CommandPalette';
+import HeaderHUD from './components/layout/HeaderHUD';
 
 function AppLayout() {
   return (
@@ -31,22 +32,26 @@ function AppLayout() {
       <Sidebar />
       <CommandPalette />
       <main className="main-content">
-        <Routes>
-          <Route path="/" element={<Dashboard />} />
-          <Route path="/tasks" element={<Tasks />} />
-          <Route path="/projects" element={<Projects />} />
-          <Route path="/planner" element={<DailyPlanner />} />
-          <Route path="/focus" element={<FocusMode />} />
-          <Route path="/braindump" element={<BrainDump />} />
-          <Route path="/analytics" element={<Analytics />} />
-          <Route path="/review" element={<WeeklyReview />} />
-          <Route path="/achievements" element={<Achievements />} />
-          <Route path="/settings" element={<Settings />} />
-        </Routes>
+        <HeaderHUD />
+        <div className="page-container">
+          <Routes>
+            <Route path="/" element={<Dashboard />} />
+            <Route path="/tasks" element={<Tasks />} />
+            <Route path="/projects" element={<Projects />} />
+            <Route path="/planner" element={<DailyPlanner />} />
+            <Route path="/focus" element={<FocusMode />} />
+            <Route path="/braindump" element={<BrainDump />} />
+            <Route path="/analytics" element={<Analytics />} />
+            <Route path="/review" element={<WeeklyReview />} />
+            <Route path="/achievements" element={<Achievements />} />
+            <Route path="/settings" element={<Settings />} />
+          </Routes>
+        </div>
       </main>
     </div>
   );
 }
+
 
 function AppRoutes() {
   const { user, loading } = useAuth();

@@ -38,7 +38,7 @@ validateEnv();
 
 const app = express();
 
-// Trust proxy for Render / Cloudflare / Load Balancers
+// Trust proxy for Vercel / Render / Cloudflare / Load Balancers
 app.set('trust proxy', 1);
 
 // Connect to MongoDB
@@ -66,7 +66,7 @@ app.use(
   cors({
     origin: (origin, callback) => {
       // Allow non-browser / mobile requests (origin undefined)
-      if (!origin || allowedOrigins.includes(origin)) {
+      if (!origin || allowedOrigins.includes(origin) || origin.endsWith('.vercel.app')) {
         return callback(null, true);
       }
       return callback(null, true); // Permissive in fallback for dev/staging
@@ -163,28 +163,32 @@ app.use((req, res) => {
 });
 
 const PORT = process.env.PORT || 5000;
-const server = app.listen(PORT, () => {
-  console.log(`🚀 PMC Server running on port ${PORT} [${process.env.NODE_ENV || 'development'}]`);
-  console.log(`📡 Health Check: http://localhost:${PORT}/health`);
-});
 
-// Graceful Shutdown
-const shutdown = async (signal) => {
-  console.log(`\n🛑 Received ${signal}. Shutting down gracefully...`);
-  server.close(async () => {
-    console.log('HTTP server closed.');
-    try {
-      await mongoose.connection.close(false);
-      console.log('MongoDB connection closed.');
-      process.exit(0);
-    } catch (err) {
-      console.error('Error closing MongoDB connection:', err);
-      process.exit(1);
-    }
+if (require.main === module) {
+  const server = app.listen(PORT, () => {
+    console.log(`🚀 PMC Server running on port ${PORT} [${process.env.NODE_ENV || 'development'}]`);
+    console.log(`📡 Health Check: http://localhost:${PORT}/health`);
   });
-};
 
-process.on('SIGINT', () => shutdown('SIGINT'));
-process.on('SIGTERM', () => shutdown('SIGTERM'));
+  // Graceful Shutdown
+  const shutdown = async (signal) => {
+    console.log(`\n🛑 Received ${signal}. Shutting down gracefully...`);
+    server.close(async () => {
+      console.log('HTTP server closed.');
+      try {
+        await mongoose.connection.close(false);
+        console.log('MongoDB connection closed.');
+        process.exit(0);
+      } catch (err) {
+        console.error('Error closing MongoDB connection:', err);
+        process.exit(1);
+      }
+    });
+  };
+
+  process.on('SIGINT', () => shutdown('SIGINT'));
+  process.on('SIGTERM', () => shutdown('SIGTERM'));
+}
 
 module.exports = app;
+
