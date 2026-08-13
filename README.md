@@ -57,7 +57,7 @@ npm run dev
 
 4. **Open** `http://localhost:5173` in your browser
 
-## 🌐 Deployment
+## 🌐 Deploymentt
 
 The backend and frontend are pre-configured for **Vercel** serverless deployment.
 See the step-by-step instructions in [VERCEL_DEPLOYMENT_GUIDE.md](file:///c:/Users/ravit/OneDrive/Desktop/projects/FULL%20STACK%20PROJECTS%20BY%20AI/personal-mission-control/VERCEL_DEPLOYMENT_GUIDE.md).
